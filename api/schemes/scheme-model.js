@@ -1,4 +1,7 @@
-function find() { // EXERCISE A
+const db = require("../../data/db-config");
+
+function find() {
+  // EXERCISE A
   /*
     1A- Study the SQL query below running it in SQLite Studio against `data/schemes.db3`.
     What happens if we change from a LEFT join to an INNER join?
@@ -15,9 +18,16 @@ function find() { // EXERCISE A
     2A- When you have a grasp on the query go ahead and build it in Knex.
     Return from this function the resulting dataset.
   */
+  return db("schemes as sc")
+    .leftJoin("steps as st", "sc.scheme_id", "st.scheme_id")
+    .select("sc.scheme_id", "sc.scheme_name")
+    .count("st.step_id as number_of_steps")
+    .groupBy("sc.scheme_id")
+    .orderBy("sc.scheme_id", "asc");
 }
 
-function findById(scheme_id) { // EXERCISE B
+async function findById(scheme_id) {
+  // EXERCISE B
   /*
     1B- Study the SQL query below running it in SQLite Studio against `data/schemes.db3`:
 
@@ -32,6 +42,8 @@ function findById(scheme_id) { // EXERCISE B
 
     2B- When you have a grasp on the query go ahead and build it in Knex
     making it parametric: instead of a literal `1` you should use `scheme_id`.
+
+
 
     3B- Test in Postman and see that the resulting data does not look like a scheme,
     but more like an array of steps each including scheme information:
@@ -83,9 +95,28 @@ function findById(scheme_id) { // EXERCISE B
         "steps": []
       }
   */
+  const schemeData = await db("schemes as sc")
+    .leftJoin("steps as st", "sc.scheme_id", "st.scheme_id")
+    .select("sc.scheme_id", "scheme_name", "step_id", "step_number", "instructions")
+    .where("sc.scheme_id", scheme_id)
+    .orderBy("st.step_number", "asc");
+
+  const result = {
+    scheme_id: schemeData[0].scheme_id,
+    scheme_name: schemeData[0].scheme_name,
+    steps: schemeData.map((step) => {
+      return {
+        step_id: step.step_id,
+        step_number: step.step_number,
+        instructions: step.instructions
+      };
+    })
+  };
+  return result;
 }
 
-function findSteps(scheme_id) { // EXERCISE C
+async function findSteps(scheme_id) {
+  // EXERCISE C
   /*
     1C- Build a query in Knex that returns the following data.
     The steps should be sorted by step_number, and the array
@@ -106,20 +137,65 @@ function findSteps(scheme_id) { // EXERCISE C
         }
       ]
   */
+
+  // SELECT
+  //     st.*,
+  //     sc.scheme_name
+  // FROM steps as st
+  // LEFT JOIN schemes as sc
+  //     ON st.scheme_id = sc.scheme_id
+  // WHERE st.scheme_id = 1
+  // ORDER BY st.step_number ASC;
+
+  const listOfSteps = await db("steps as st")
+    .leftJoin("schemes as sc", "st.scheme_id", "sc.scheme_id")
+    .select("st.step_id", "st.step_number", "st.instructions", "sc.scheme_name")
+    .where("st.scheme_id", scheme_id)
+    .orderBy("st.step_number", "asc");
+
+  const result = listOfSteps.map((item) => {
+    return {
+      step_id: item.step_id,
+      step_number: item.step_number,
+      instructions: item.instructions,
+      scheme_name: item.scheme_name
+    };
+  });
+  return result;
 }
 
-function add(scheme) { // EXERCISE D
+async function add(scheme) {
+  // EXERCISE D
   /*
     1D- This function creates a new scheme and resolves to _the newly created scheme_.
   */
+
+  const [id] = await db("schemes").insert(scheme);
+  return findById(id);
 }
 
-function addStep(scheme_id, step) { // EXERCISE E
+async function addStep(scheme_id, step) {
+  // EXERCISE E
   /*
     1E- This function adds a step to the scheme with the given `scheme_id`
     and resolves to _all the steps_ belonging to the given `scheme_id`,
     including the newly created one.
+
+    INSERT INTO steps (instructions, scheme_id, step_number)
+    VALUES ('sample instructions', '7', '1');
+
   */
+
+  await db("steps").insert({
+    scheme_id: scheme_id,
+    instructions: step.instructions,
+    step_number: step.step_number
+  });
+  return findSteps(scheme_id);
+}
+
+function checkForId(scheme_id) {
+  return db("schemes").select(scheme_id);
 }
 
 module.exports = {
@@ -128,4 +204,5 @@ module.exports = {
   findSteps,
   add,
   addStep,
-}
+  checkForId
+};
