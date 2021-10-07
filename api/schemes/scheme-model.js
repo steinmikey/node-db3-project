@@ -101,16 +101,36 @@ async function findById(scheme_id) {
     .where("sc.scheme_id", scheme_id)
     .orderBy("st.step_number", "asc");
 
+  // {
+  //   "scheme_id": 1,
+  //   "scheme_name": "World Domination",
+  //   "steps": [
+  //     {
+  //       "step_id": 2,
+  //       "step_number": 1,
+  //       "instructions": "solve prime number theory"
+  //     },
+  //     {
+  //       "step_id": 1,
+  //       "step_number": 2,
+  //       "instructions": "crack cyber security"
+  //     },
+  //     // etc
+  //   ]
+  // }
+
   const result = {
     scheme_id: schemeData[0].scheme_id,
     scheme_name: schemeData[0].scheme_name,
-    steps: schemeData.map((step) => {
-      return {
-        step_id: step.step_id,
-        step_number: step.step_number,
-        instructions: step.instructions
-      };
-    })
+    steps: !schemeData[0].step_id
+      ? []
+      : schemeData.map((step) => {
+          return {
+            step_id: step.step_id,
+            step_number: step.step_number,
+            instructions: step.instructions
+          };
+        })
   };
   return result;
 }
@@ -194,8 +214,13 @@ async function addStep(scheme_id, step) {
   return findSteps(scheme_id);
 }
 
+// SELECT
+// *
+// FROM schemes
+// WHERE scheme_id = 5;
+
 function checkForId(scheme_id) {
-  return db("schemes").select(scheme_id);
+  return db("schemes").where("scheme_id", scheme_id);
 }
 
 module.exports = {

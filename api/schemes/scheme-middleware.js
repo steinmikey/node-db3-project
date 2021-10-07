@@ -9,25 +9,11 @@ const Scheme = require("./scheme-model");
   }
 */
 const checkSchemeId = async (req, res, next) => {
-  const [id] = await Scheme.checkForId(req.params.id);
-  if (!id) {
-    next({ status: 404, message: `scheme with scheme_id ${req.params.id} not found` });
+  const [checkedScheme] = await Scheme.checkForId(req.params.scheme_id);
+  if (!checkedScheme) {
+    next({ status: 404, message: `scheme with scheme_id ${req.params.scheme_id} not found` });
   }
   next();
-
-  // const schemer = await Scheme.findById(req.params.id);
-  // if (schemer) {
-  //   console.log("true");
-  //   next();
-  // } else {
-  //   console.log("false");
-  // }
-
-  // if (id) {
-  //   next();
-  // } else {
-  //   next({ status: 404, message: `scheme with scheme_id ${req.params.id} not found` });
-  // }
 };
 
 /*
